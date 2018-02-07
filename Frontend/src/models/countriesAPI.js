@@ -42,6 +42,14 @@ CountriesAPI.prototype.findCountry = function(country_name, countries){
   })
 };
 
+CountriesAPI.prototype.retrieveCountry = function(country_name, countries){
+    for(country of countries){
+        if (country.name === country_name){
+            return country;
+        }
+    }
+};
+
 
 
 

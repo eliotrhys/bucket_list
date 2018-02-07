@@ -60,15 +60,48 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
+/***/ (function(module, exports) {
+
+const CountriesView = function(){
+
+}
+
+CountriesView.prototype.populateSelect = function(countries){
+
+  var select = document.querySelector("#countries-list");
+
+  countries.forEach(function(country){
+    var option = document.createElement('option');
+    option.innerText = country.name;
+    select.appendChild(option);
+  });
+
+}
+
+CountriesView.prototype.populateList = function(country){
+  var ul = document.querySelector('#selected-country');
+  ul.innerText = '';
+  var countryName = document.createElement('li');
+  countryName.innerText = country.name;
+  ul.appendChild(countryName);
+}
+
+module.exports = CountriesView;
+
+
+/***/ }),
+/* 1 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const CountriesAPI = __webpack_require__(1);
-const CountriesView = __webpack_require__(2);
+const CountriesAPI = __webpack_require__(2);
+const CountriesView = __webpack_require__(0);
+const BucketListData = __webpack_require__(3);
+const BucketListView = __webpack_require__(4);
 
 
 
@@ -76,6 +109,7 @@ const CountriesView = __webpack_require__(2);
 
 const app = function(){
   // console.log('app');
+    var countryToAdd = null;
   var countriesAPI = new CountriesAPI('http://restcountries.eu/rest/v2');
   var countriesView = new CountriesView();
   countriesAPI.makeRequest();
@@ -86,10 +120,25 @@ const app = function(){
   var select = document.querySelector('#countries-list');
   select.addEventListener('change', function(){
     var selected = this;
-    countriesAPI.handleSelected(selected).bind(countriesAPI);
+      countryToAdd = countriesAPI.retrieveCountry(this.value, countriesData);
+      console.log(countryToAdd);
+    countriesAPI.handleSelected(selected);
+
   });
 
+  const bucketListData = new BucketListData('http://localhost:5000/api/bucketlist');
+  var container = document.querySelector('#bucket-list');
+  console.log(container);
+  const bucketListView = new BucketListView(container);
+  bucketListData.onload = bucketListView.render.bind(bucketListView);
+  bucketListData.getData();
 
+
+
+  const createButton = document.querySelector('#submit-button');
+  createButton.addEventListener('click', function (e) {
+      bucketListData.createButtonClicked(e, countryToAdd)
+  })
 
 };
 
@@ -97,10 +146,10 @@ window.addEventListener('load', app);
 
 
 /***/ }),
-/* 1 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const CountriesView = __webpack_require__(2);
+const CountriesView = __webpack_require__(0);
 
 const CountriesAPI = function(url) {
   this.url = url;
@@ -144,6 +193,14 @@ CountriesAPI.prototype.findCountry = function(country_name, countries){
   })
 };
 
+CountriesAPI.prototype.retrieveCountry = function(country_name, countries){
+    for(country of countries){
+        if (country.name === country_name){
+            return country;
+        }
+    }
+};
+
 
 
 
@@ -152,35 +209,107 @@ module.exports = CountriesAPI;
 
 
 /***/ }),
-/* 2 */
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+const Request = __webpack_require__(5);
+
+const BucketListData = function (url) {
+    this.url = url;
+    this.onload = null;
+    this.oncreate = null;
+}
+
+BucketListData.prototype.getData = function () {
+    const request = new Request(this.url);
+    request.get(this.onload);
+}
+
+BucketListData.prototype.createButtonClicked = function (event, countryToAdd) {
+    event.preventDefault();
+    const countryName = countryToAdd.name;
+    const body = {
+        name: countryName,
+
+    }
+    const createRequestComplete = function () {
+        this.getData();
+    }.bind(this);
+    var request = new Request(this.url);
+    request.post(createRequestComplete, body);
+}
+
+module.exports = BucketListData;
+
+/***/ }),
+/* 4 */
 /***/ (function(module, exports) {
 
-const CountriesView = function(){
-
+const BucketListView = function (container) {
+    this.container = container;
 }
 
-CountriesView.prototype.populateSelect = function(countries){
-
-  var select = document.querySelector("#countries-list");
-
-  countries.forEach(function(country){
-    var option = document.createElement('option');
-    option.innerText = country.name;
-    select.appendChild(option);
-  });
-
+BucketListView.prototype.render = function (data) {
+    this.container.innerHTML = '';
+    console.log(data , this.container);
+    data.forEach(function (datum) {
+        var bucketListli = document.createElement('li')
+        bucketListli.innerText = datum.name;
+        this.container.appendChild(bucketListli);
+    }.bind(this))
 }
 
-CountriesView.prototype.populateList = function(country){
-  var ul = document.querySelector('#selected-country');
-  ul.innerText = '';
-  var countryName = document.createElement('li');
-  countryName.innerText = country.name;
-  ul.appendChild(countryName);
+module.exports = BucketListView;
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+const Request = function (url) {
+    this.url = url;
 }
 
-module.exports = CountriesView;
+Request.prototype.get = function (callback) {
+    const request = new XMLHttpRequest();
+    request.open('GET', this.url);
+    request.addEventListener('load', function () {
+        if(this.status != 200){
+            return;
+        }
+        const responseBody = JSON.parse(this.responseText);
+        callback(responseBody);
+    });
+    request.send();
+}
 
+Request.prototype.post = function (callback, body) {
+    const request = new XMLHttpRequest();
+    request.open('POST', this.url);
+    request.setRequestHeader('Content-Type', 'application/json');
+    request.addEventListener('load', function () {
+        if(this.status != 201){
+            return;
+        }
+        const responseBody = JSON.parse(this.responseText);
+        callback(responseBody);
+    });
+    request.send(JSON.stringify(body));
+}
+
+Request.prototype.delete = function (callback) {
+    const request = new XMLHttpRequest();
+    request.open('DELETE', this.url);
+    request.addEventListener('load', function () {
+        if(this.status != 204){
+            return;
+        }
+        callback();
+    });
+    request.send();
+}
+
+
+module.exports = Request;
 
 /***/ })
 /******/ ]);

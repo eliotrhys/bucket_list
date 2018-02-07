@@ -14,4 +14,12 @@ CountriesView.prototype.populateSelect = function(countries){
 
 }
 
+CountriesView.prototype.populateList = function(country){
+  var ul = document.querySelector('#selected-country');
+  ul.innerText = '';
+  var countryName = document.createElement('li');
+  countryName.innerText = country.name;
+  ul.appendChild(countryName);
+}
+
 module.exports = CountriesView;

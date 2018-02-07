@@ -73,13 +73,24 @@ const CountriesView = __webpack_require__(2);
 
 
 
+
 const app = function(){
-  console.log('app');
+  // console.log('app');
   var countriesAPI = new CountriesAPI('http://restcountries.eu/rest/v2');
   var countriesView = new CountriesView();
   countriesAPI.makeRequest();
   countriesAPI.saveData();
-  countriesView.populateSelect(countriesAPI.data);
+  var countriesData = countriesAPI.data;
+  countriesView.populateSelect(countriesData);
+
+  var select = document.querySelector('#countries-list');
+  select.addEventListener('change', function(){
+    var selected = this;
+    countriesAPI.handleSelected(selected).bind(countriesAPI);
+  });
+
+
+
 };
 
 window.addEventListener('load', app);
@@ -87,7 +98,9 @@ window.addEventListener('load', app);
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+const CountriesView = __webpack_require__(2);
 
 const CountriesAPI = function(url) {
   this.url = url;
@@ -115,8 +128,25 @@ CountriesAPI.prototype.saveData = function(){
   var jsonString = localStorage.getItem('countries');
   var countries = JSON.parse(jsonString);
   this.data = countries;
-  console.log(countries);
+  // console.log(countries);
 }
+
+CountriesAPI.prototype.handleSelected = function(selected){
+  this.findCountry(selected.value, this.data);
+}
+
+CountriesAPI.prototype.findCountry = function(country_name, countries){
+  var countriesView = new CountriesView();
+  countries.forEach(function(country){
+    if (country.name === country_name){
+      countriesView.populateList(country);
+    }
+  })
+};
+
+
+
+
 
 module.exports = CountriesAPI;
 
@@ -139,6 +169,14 @@ CountriesView.prototype.populateSelect = function(countries){
     select.appendChild(option);
   });
 
+}
+
+CountriesView.prototype.populateList = function(country){
+  var ul = document.querySelector('#selected-country');
+  ul.innerText = '';
+  var countryName = document.createElement('li');
+  countryName.innerText = country.name;
+  ul.appendChild(countryName);
 }
 
 module.exports = CountriesView;

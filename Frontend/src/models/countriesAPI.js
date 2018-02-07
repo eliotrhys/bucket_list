@@ -1,3 +1,5 @@
+const CountriesView = require('../views/countriesView');
+
 const CountriesAPI = function(url) {
   this.url = url;
   this.data = [];
@@ -24,7 +26,24 @@ CountriesAPI.prototype.saveData = function(){
   var jsonString = localStorage.getItem('countries');
   var countries = JSON.parse(jsonString);
   this.data = countries;
-  console.log(countries);
+  // console.log(countries);
 }
+
+CountriesAPI.prototype.handleSelected = function(selected){
+  this.findCountry(selected.value, this.data);
+}
+
+CountriesAPI.prototype.findCountry = function(country_name, countries){
+  var countriesView = new CountriesView();
+  countries.forEach(function(country){
+    if (country.name === country_name){
+      countriesView.populateList(country);
+    }
+  })
+};
+
+
+
+
 
 module.exports = CountriesAPI;

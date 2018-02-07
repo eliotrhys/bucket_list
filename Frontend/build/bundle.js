@@ -68,14 +68,19 @@
 /***/ (function(module, exports, __webpack_require__) {
 
 const CountriesAPI = __webpack_require__(1);
+const CountriesView = __webpack_require__(2);
+
+
 
 
 const app = function(){
   console.log('app');
   var countriesAPI = new CountriesAPI('http://restcountries.eu/rest/v2');
+  var countriesView = new CountriesView();
   countriesAPI.makeRequest();
-
-}
+  countriesAPI.saveData();
+  countriesView.populateSelect(countriesAPI.data);
+};
 
 window.addEventListener('load', app);
 
@@ -85,8 +90,8 @@ window.addEventListener('load', app);
 /***/ (function(module, exports) {
 
 const CountriesAPI = function(url) {
-  this.url = url,
-  this.data = []
+  this.url = url;
+  this.data = [];
 }
 
 CountriesAPI.prototype.requestComplete = function(){
@@ -95,18 +100,48 @@ CountriesAPI.prototype.requestComplete = function(){
   }
   var jsonString = this.responseText;
   var countries = JSON.parse(jsonString);
-  console.log(countries);
+  var jsonString = JSON.stringify(countries);
+  localStorage.setItem('countries', jsonString);
 }
 
 CountriesAPI.prototype.makeRequest = function() {
   var request = new XMLHttpRequest();
   request.open('GET', this.url);
-  console.log(request);
   request.addEventListener('load', this.requestComplete);
   request.send();
 }
 
+CountriesAPI.prototype.saveData = function(){
+  var jsonString = localStorage.getItem('countries');
+  var countries = JSON.parse(jsonString);
+  this.data = countries;
+  console.log(countries);
+}
+
 module.exports = CountriesAPI;
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports) {
+
+const CountriesView = function(){
+
+}
+
+CountriesView.prototype.populateSelect = function(countries){
+
+  var select = document.querySelector("#countries-list");
+
+  countries.forEach(function(country){
+    var option = document.createElement('option');
+    option.innerText = country.name;
+    select.appendChild(option);
+  });
+
+}
+
+module.exports = CountriesView;
 
 
 /***/ })

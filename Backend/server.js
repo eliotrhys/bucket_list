@@ -20,8 +20,22 @@ MongoClient.connect('mongodb://localhost:27017', function(err, client){
   const db = client.db('bucketlist');
   console.log('connected to db');
 
-  server.listen(5000, function() {
-    console.log('listening on port 5000')
+  //GET
+
+  server.get('/api/bucketlist', function(req, res){
+    db.collection('countries').find().toArray(function(err, result){
+      if(err){
+        console.log(err);
+        res.status(500);
+        res.send();
+      }
+      res.status(200);
+      res.json(result);
+    })
   })
 
-})
+  server.listen(9000, function() {
+    console.log('listening on port 9000')
+  });
+
+});
